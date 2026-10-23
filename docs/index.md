@@ -25,5 +25,6 @@ permalink: /
 ## API
 
 * [CLI Commands](cli.md)
+* [CI Sync](ci-sync.md)
 * [Available Hooks](hooks.md)
 * [REST API](api.md)
