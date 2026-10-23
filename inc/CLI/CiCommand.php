@@ -81,24 +81,48 @@ class CiCommand extends WP_CLI_Command {
 		}
 
 		$updater->add_lock();
-		$stats = $updater->import_pot_file( $args[1] );
+
+		$stats       = $this->import_pot( $updater, $args[1] );
+		$second_pass = false;
+		$missing     = $this->get_missing_entries( $project, $pot );
+
+		// import_for_project() can fuzzy-match two new strings to the same dropped original and keeps only the last.
+		// That original is no longer dropped on a re-run, so one more pass creates the lost string.
+		if ( $missing ) {
+			WP_CLI::log( sprintf( '%d POT strings have no active original after the first pass, importing again.', \count( $missing ) ) );
+
+			foreach ( $this->import_pot( $updater, $args[1] ) as $i => $count ) {
+				$stats[ $i ] += $count;
+			}
+
+			$second_pass = true;
+			$missing     = $this->get_missing_entries( $project, $pot );
+		}
+
 		$updater->remove_lock();
 
-		if ( null === $stats ) {
-			WP_CLI::error( sprintf( 'Could not import %s', $args[1] ) );
+		if ( $missing ) {
+			WP_CLI::warning(
+				sprintf(
+					'%1$d POT strings are still missing after the second pass, e.g. "%2$s".',
+					\count( $missing ),
+					implode( '", "', array_column( \array_slice( $missing, 0, 3 ), 'singular' ) )
+				)
+			);
 		}
 
 		[ $added, $changed, $fuzzied, $obsoleted, $errors ] = $stats;
 
 		WP_CLI::success(
 			sprintf(
-				'Imported originals for project (ID: %1$d): %2$d added, %3$d changed, %4$d fuzzied, %5$d obsoleted, %6$d errors.',
+				'Imported originals for project (ID: %1$d): %2$d added, %3$d changed, %4$d fuzzied, %5$d obsoleted, %6$d errors%7$s.',
 				$project->get_id(),
 				$added,
 				$changed,
 				$fuzzied,
 				$obsoleted,
-				$errors
+				$errors,
+				$second_pass ? ' (2 passes)' : ''
 			)
 		);
 	}
@@ -282,6 +306,37 @@ class CiCommand extends WP_CLI_Command {
 		}
 
 		return $po;
+	}
+
+	/**
+	 * Imports a POT file into the project, or releases the update lock and exits with an error.
+	 *
+	 * @param \Required\Traduttore\Updater $updater The updater holding the lock.
+	 * @param string                       $file    Path to the POT file.
+	 * @return int[] Stats as returned by Updater::import_pot_file().
+	 */
+	protected function import_pot( Updater $updater, string $file ): array {
+		$stats = $updater->import_pot_file( $file );
+
+		if ( null === $stats ) {
+			$updater->remove_lock();
+			WP_CLI::error( sprintf( 'Could not import %s', $file ) );
+		}
+
+		return $stats;
+	}
+
+	/**
+	 * Returns the POT entries that have no active original in the project.
+	 *
+	 * Both sides are keyed like Translation_Entry::key(), so this is a key diff.
+	 *
+	 * @param \Required\Traduttore\Project $project The project.
+	 * @param \PO                          $pot     The parsed POT file.
+	 * @return \Translation_Entry[] Missing entries keyed by entry key.
+	 */
+	protected function get_missing_entries( Project $project, PO $pot ): array {
+		return array_diff_key( $pot->entries, $this->get_original_ids_by_key( $project ) );
 	}
 
 	/**

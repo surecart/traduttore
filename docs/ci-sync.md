@@ -20,6 +20,8 @@ Imports a POT through `Updater::import_pot_file()`, the same code path the webho
 
 The POT may omit `X-Domain` (ours is built with `--ignore-domain`); the stored text domain is kept in that case.
 
+If any POT string has no active original after the import, the POT is imported a second time (the success line then ends in `(2 passes)`): GlotPress' `GP_Original::import_for_project()` can fuzzy-match two new strings to the same dropped original and silently keeps only the last one, and on the re-run that original is no longer in the dropped set, so the lost string gets created. Anything still missing after the second pass is reported as a warning.
+
 ```bash
 wp traduttore ci originals surecart /tmp/surecart.pot
 # Success: Imported originals for project (ID: 1): 12 added, 3 changed, 0 fuzzied, 1 obsoleted, 0 errors.

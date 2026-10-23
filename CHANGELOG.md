@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * `wp traduttore ci` commands and `bin/ci-ssh-wrapper.sh` so a CI pipeline can push a POT, exchange translation sets and build language packs over SSH without Traduttore cloning the repository. See `docs/ci-sync.md`.
+* `wp traduttore ci originals` imports the POT a second time when GlotPress' fuzzy matching has dropped a new string, and warns about anything still missing.
 
 ### Changed
 * Require at least PHP 7.2. [#236]
