@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* `wp traduttore ci` commands and `bin/ci-ssh-wrapper.sh` so a CI pipeline can push a POT, exchange translation sets and build language packs over SSH without Traduttore cloning the repository. See `docs/ci-sync.md`.
+
 ### Changed
 * Require at least PHP 7.2. [#236]
 

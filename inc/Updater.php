@@ -116,19 +116,37 @@ class Updater {
 			return false;
 		}
 
-		$translations = new PO();
-		$result       = $translations->import_from_file( $pot_file );
+		$stats = $this->import_pot_file( $pot_file );
 
 		unlink( $pot_file );
 
-		if ( ! $result ) {
-			return false;
+		return null !== $stats;
+	}
+
+	/**
+	 * Imports the originals from a POT file into the project.
+	 *
+	 * Updates the project's text domain and version from the POT headers when present,
+	 * imports the originals and fires `traduttore.updated`. The caller owns the file.
+	 *
+	 * @param string $file Path to the POT file.
+	 * @return int[]|null Stats as returned by GP_Original::import_for_project()
+	 *                    (added, existing, fuzzied, obsoleted, error), null if the file could not be parsed.
+	 */
+	public function import_pot_file( string $file ): ?array {
+		$translations = new PO();
+
+		if ( ! $translations->import_from_file( $file ) ) {
+			return null;
 		}
 
-		$this->project->set_text_domain( sanitize_text_field( $translations->headers['X-Domain'] ) );
+		// A POT built with --ignore-domain has no X-Domain. Keep the stored domain, Export relies on it for file names.
+		if ( ! empty( $translations->headers['X-Domain'] ) ) {
+			$this->project->set_text_domain( sanitize_text_field( $translations->headers['X-Domain'] ) );
+		}
 
-		if ( $translations->headers['Project-Id-Version'] ) {
-			$this->project->set_version( $this->extract_version( $translations->headers['Project-Id-Version'] ) );
+		if ( ! empty( $translations->headers['Project-Id-Version'] ) ) {
+			$this->project->set_version( $this->extract_version( $translations->headers['Project-Id-Version'] ) ?? '' );
 		}
 
 		$stats = GP::$original->import_for_project( $this->project->get_project(), $translations );
@@ -146,7 +164,7 @@ class Updater {
 		 */
 		do_action( 'traduttore.updated', $this->project, $stats, $translations );
 
-		return true;
+		return $stats;
 	}
 
 	/**
