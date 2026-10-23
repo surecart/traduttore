@@ -67,7 +67,8 @@ case "$cmd" in
 	export)
 		[[ -n "$arg2" && -z "$arg3" ]] || die 'usage: export <locale> <set>'
 		is_slug "$arg1" && is_slug "$arg2" || die 'locale and set must match ^[a-z0-9_-]+$'
-		wp glotpress translation-set export "$project" "$arg1" --set="$arg2"
+		# GlotPress CLI defaults to current only; the AI job needs untranslated originals too.
+		wp glotpress translation-set export "$project" "$arg1" --set="$arg2" --status=current_or_untranslated
 		;;
 	import)
 		[[ -n "$arg2" && -z "$extra" ]] || die 'usage: import <locale> <set> [current|waiting] < file.po'

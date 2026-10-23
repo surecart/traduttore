@@ -86,7 +86,7 @@ ssh ci@translate.surecart.com packs
 | --- | --- |
 | `originals` | `wp traduttore ci originals <project> <tmp>` |
 | `sets` | `wp traduttore ci sets <project>` |
-| `export <locale> <set>` | `wp glotpress translation-set export <project> <locale> --set=<set>` |
+| `export <locale> <set>` | `wp glotpress translation-set export <project> <locale> --set=<set> --status=current_or_untranslated` |
 | `import <locale> <set> [current\|waiting]` | `wp traduttore ci import <project> <locale> <set> <tmp> --status=<status>` |
 | `packs` | `wp traduttore language-pack build <project>` |
 
